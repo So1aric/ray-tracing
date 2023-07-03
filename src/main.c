@@ -23,24 +23,34 @@ const float VIEWPORT_Z      = 2.0;
 
 const Vec3 BACKGROUND_COLOR = { 0.0, 0.0, 0.1 };
 
+/* There is a warning. I don't know how to deal with it. */
 uint8_t canvas[CANVAS_SIZE]  = {0};
 
 typedef struct {
     Vec3 center;
     float radius;
+    /* 0 is for black, 1 is for white. */
     Vec3 color;
 } Sphere;
 
 const Sphere spheres[] = {
-    { {   0,   0, 4 },   1, { 1, 0, 0 } },
-    { { 0.5, 0.5, 3 }, 0.3, { 0, 1, 1 } }
+    /*    center        radius       color   */
+    { {   0,   0,  4 },      1,   { 1, 0, 0 } },
+    { { 0.5, 0.5,  3 },    0.3,   { 0, 1, 1 } }
 };
 
+/* function declarations */
+
 Vec3 canvas_to_viewport(int x, int y);
-Vec3 raycast(Vec3 from, Vec3 to);
+/*
+ * @param O: the start of the ray
+ * @param D: the direction of the ray
+ */
+Vec3 raycast(Vec3 O, Vec3 D);
 void render();
 void putpixel(size_t x, size_t y, Vec3 color);
 
+/* function definitions */
 Vec3
 canvas_to_viewport(int x, int y)
 {
@@ -55,6 +65,7 @@ canvas_to_viewport(int x, int y)
 Vec3
 raycast(Vec3 O, Vec3 D)
 {
+    /* We want the closest intersection. */
     float t = 1e10;
     Vec3 color = BACKGROUND_COLOR;
 
@@ -75,6 +86,9 @@ raycast(Vec3 O, Vec3 D)
             float t1 = part1 + part2;
             float t2 = part1 - part2;
 
+            /* 't' must be greater than 0.
+             * Otherwise, the intersection is behind the viewport.
+             */
             if (t1 > 0 && t1 < t) {
                 t = t1; color = sphere->color;
             }
@@ -93,6 +107,7 @@ render()
     for (int x = -CANVAS_HALF_WIDTH; x < CANVAS_HALF_WIDTH; x++) {
         for (int y = -CANVAS_HALF_HEIGHT; y < CANVAS_HALF_HEIGHT; y++) {
             Vec3 V = canvas_to_viewport(x, y);
+            /* The direction is 'vec_sub(V, O)' */
             Vec3 color = raycast(V, V);
             putpixel(x, y, color);
         }
@@ -106,6 +121,7 @@ putpixel(size_t x, size_t y, Vec3 color)
     size_t _y = y + CANVAS_HALF_HEIGHT;
     size_t index = (_y * CANVAS_WIDTH + _x) * 3;
 
+    /* color: [0, 1] -> [0, 255] */
     canvas[index++] = (int)(color.x * 255);
     canvas[index++] = (int)(color.y * 255);
     canvas[index]   = (int)(color.z * 255);
